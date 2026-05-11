@@ -1,36 +1,32 @@
 import json
-import faiss
-import numpy as np
 
-from sentence_transformers import SentenceTransformer
-
-# Load catalog
 with open("data/cleaned_catalog.json", "r", encoding="utf-8") as f:
     catalog = json.load(f)
 
-# Load FAISS index
-index = faiss.read_index("data/shl_index.faiss")
 
-# Load embedding model
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2",
-    local_files_only=True
-)
+def search_assessments(query: str, top_k: int = 5):
 
-def search_assessments(query, top_k=5):
+    query = query.lower()
 
-    # Convert query to embedding
-    query_embedding = model.encode([query])
+    scored = []
 
-    query_embedding = np.array(query_embedding).astype("float32")
+    for item in catalog:
 
-    # Search FAISS
-    distances, indices = index.search(query_embedding, top_k)
+        score = 0
 
-    results = []
+        text = (
+            item.get("name", "") + " " +
+            item.get("description", "")
+        ).lower()
 
-    for idx in indices[0]:
-        if idx < len(catalog):
-            results.append(catalog[idx])
+        for word in query.split():
 
-    return results
+            if word in text:
+                score += 1
+
+        if score > 0:
+            scored.append((score, item))
+
+    scored.sort(reverse=True, key=lambda x: x[0])
+
+    return [item for _, item in scored[:top_k]]
