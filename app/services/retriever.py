@@ -1,32 +1,29 @@
 import json
+import os
 
-with open("data/cleaned_catalog.json", "r", encoding="utf-8") as f:
-    catalog = json.load(f)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+CATALOG_PATH = os.path.join(BASE_DIR, "data", "cleaned_catalog.json")
 
 
-def search_assessments(query: str, top_k: int = 5):
+def search_assessments(query: str):
+
+    with open(CATALOG_PATH, "r", encoding="utf-8") as f:
+        catalog = json.load(f)
+
+    results = []
 
     query = query.lower()
 
-    scored = []
-
     for item in catalog:
 
-        score = 0
+        name = item.get("name", "").lower()
+        description = item.get("description", "").lower()
 
-        text = (
-            item.get("name", "") + " " +
-            item.get("description", "")
-        ).lower()
+        if query in name or query in description:
+            results.append(item)
 
-        for word in query.split():
+    if len(results) == 0:
+        results = catalog[:5]
 
-            if word in text:
-                score += 1
-
-        if score > 0:
-            scored.append((score, item))
-
-    scored.sort(reverse=True, key=lambda x: x[0])
-
-    return [item for _, item in scored[:top_k]]
+    return results[:5]
