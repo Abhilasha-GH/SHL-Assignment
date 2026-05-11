@@ -8,31 +8,57 @@ from app.services.comparison import compare_assessments
 app = FastAPI()
 
 
-# Message schema
+# -----------------------------
+# Models
+# -----------------------------
+
 class Message(BaseModel):
     role: str
     content: str
 
 
-# Request schema
 class ChatRequest(BaseModel):
     messages: List[Message]
 
 
+# -----------------------------
+# Root Route
+# -----------------------------
+
+@app.get("/")
+def root():
+    return {
+        "message": "SHL Assessment API is running"
+    }
+
+
+# -----------------------------
+# Health Check
+# -----------------------------
+
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok"
+    }
 
+
+# -----------------------------
+# Chat Endpoint
+# -----------------------------
 
 @app.post("/chat")
 def chat(request: ChatRequest):
 
-    # Combine full conversation history
+    # Combine all conversation messages
     conversation_text = " ".join(
         [msg.content for msg in request.messages]
     ).lower()
 
-    # Vague queries
+    # -----------------------------
+    # Clarification Queries
+    # -----------------------------
+
     vague_queries = [
         "i need an assessment",
         "help me hire",
@@ -41,7 +67,10 @@ def chat(request: ChatRequest):
         "need a test"
     ]
 
-    # Blocked topics
+    # -----------------------------
+    # Blocked Topics
+    # -----------------------------
+
     blocked_topics = [
         "salary",
         "legal",
@@ -52,7 +81,10 @@ def chat(request: ChatRequest):
         "religion"
     ]
 
-    # Clarification logic
+    # -----------------------------
+    # Clarification Logic
+    # -----------------------------
+
     if any(query in conversation_text for query in vague_queries):
 
         if len(request.messages) == 1:
@@ -63,7 +95,10 @@ def chat(request: ChatRequest):
                 "end_of_conversation": False
             }
 
-    # Refusal logic
+    # -----------------------------
+    # Refusal Logic
+    # -----------------------------
+
     if any(topic in conversation_text for topic in blocked_topics):
 
         return {
@@ -72,7 +107,10 @@ def chat(request: ChatRequest):
             "end_of_conversation": False
         }
 
-    # Comparison logic
+    # -----------------------------
+    # Comparison Logic
+    # -----------------------------
+
     if "difference" in conversation_text or "compare" in conversation_text:
 
         comparison = compare_assessments(conversation_text)
@@ -85,17 +123,23 @@ def chat(request: ChatRequest):
                 "end_of_conversation": False
             }
 
-    # Refinement logic
+    # -----------------------------
+    # Query Refinement
+    # -----------------------------
+
     if "personality" in conversation_text:
-        conversation_text += " personality assessment behavioral assessment"
+        conversation_text += " personality behavioral assessment"
 
     if "technical" in conversation_text:
-        conversation_text += " coding technical skills"
+        conversation_text += " coding programming technical skills"
 
     if "cognitive" in conversation_text:
-        conversation_text += " cognitive ability reasoning"
+        conversation_text += " cognitive reasoning aptitude"
 
-    # Retrieval step
+    # -----------------------------
+    # Retrieve Assessments
+    # -----------------------------
+
     results = search_assessments(conversation_text)
 
     recommendations = []
@@ -103,10 +147,14 @@ def chat(request: ChatRequest):
     for item in results:
 
         recommendations.append({
-            "name": item["name"],
-            "url": item["url"],
-            "test_type": "Unknown"
+            "name": item.get("name", "Unknown Assessment"),
+            "url": item.get("url", ""),
+            "test_type": item.get("test_type", "Unknown")
         })
+
+    # -----------------------------
+    # Final Response
+    # -----------------------------
 
     return {
         "reply": "Here are recommended SHL assessments.",
