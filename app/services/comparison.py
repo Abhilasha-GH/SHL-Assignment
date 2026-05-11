@@ -1,29 +1,21 @@
-import json
-import os
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-
-CATALOG_PATH = os.path.join(BASE_DIR, "data", "cleaned_catalog.json")
+from app.services.retriever import search_assessments
 
 
-def search_assessments(query: str):
+def compare_assessments(query: str):
 
-    with open(CATALOG_PATH, "r", encoding="utf-8") as f:
-        catalog = json.load(f)
+    results = search_assessments(query)
 
-    query = query.lower()
+    if len(results) < 2:
+        return "Not enough assessments found to compare."
 
-    results = []
+    response = "Comparison between assessments:\n\n"
 
-    for item in catalog:
+    for item in results[:2]:
 
-        name = item.get("name", "").lower()
-        description = item.get("description", "").lower()
+        response += (
+            f"Name: {item['name']}\n"
+            f"URL: {item['url']}\n"
+            f"Description: {item.get('description', 'No description')}\n\n"
+        )
 
-        if query in name or query in description:
-            results.append(item)
-
-    if len(results) == 0:
-        results = catalog[:5]
-
-    return results[:5]
+    return response
