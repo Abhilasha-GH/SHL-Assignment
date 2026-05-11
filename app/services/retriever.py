@@ -11,9 +11,9 @@ def search_assessments(query: str):
     with open(CATALOG_PATH, "r", encoding="utf-8") as f:
         catalog = json.load(f)
 
-    results = []
-
     query = query.lower()
+
+    results = []
 
     for item in catalog:
 
