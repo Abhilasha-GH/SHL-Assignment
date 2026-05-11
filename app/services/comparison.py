@@ -1,32 +1,29 @@
 import json
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+CATALOG_PATH = os.path.join(BASE_DIR, "data", "cleaned_catalog.json")
 
 
-with open("data/cleaned_catalog.json", "r", encoding="utf-8") as f:
-    catalog = json.load(f)
+def search_assessments(query: str):
 
+    with open(CATALOG_PATH, "r", encoding="utf-8") as f:
+        catalog = json.load(f)
 
-def compare_assessments(query):
+    query = query.lower()
 
-    matches = []
+    results = []
 
     for item in catalog:
 
-        name = item["name"].lower()
+        name = item.get("name", "").lower()
+        description = item.get("description", "").lower()
 
-        if name in query.lower():
-            matches.append(item)
+        if query in name or query in description:
+            results.append(item)
 
-    if len(matches) < 2:
-        return None
+    if len(results) == 0:
+        results = catalog[:5]
 
-    comparison_text = "Comparison between assessments:\n\n"
-
-    for item in matches[:2]:
-
-        comparison_text += (
-            f"Name: {item['name']}\n"
-            f"URL: {item['url']}\n"
-            f"Description: {item.get('description', 'No description')}\n\n"
-        )
-
-    return comparison_text
+    return results[:5]
